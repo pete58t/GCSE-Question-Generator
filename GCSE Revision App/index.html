@@ -1,0 +1,1158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Revision Coach" />
+<meta name="theme-color" content="#0b1220" />
+<link rel="manifest" href="manifest.json" />
+<link rel="apple-touch-icon" href="icon-192.png" />
+<title>Revision Coach</title>
+<style>
+  :root {
+    --bg: #0b1220;
+    --surface: #131c2e;
+    --surface-2: #1b2740;
+    --text: #e7ecf3;
+    --muted: #92a0bb;
+    --accent: #4f8cff;
+    --accent-2: #38d39f;
+    --danger: #ff6b6b;
+    --warn: #f5c451;
+    --border: #243150;
+    --radius: 14px;
+    --pad: 16px;
+    --tap: 48px;
+    --shadow: 0 2px 10px rgba(0,0,0,0.25);
+    font-size: 17px;
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #f6f7fb;
+      --surface: #ffffff;
+      --surface-2: #eef1f7;
+      --text: #0f172a;
+      --muted: #5b6577;
+      --accent: #2a66e0;
+      --accent-2: #1c9b73;
+      --border: #d8dde7;
+      --shadow: 0 1px 4px rgba(15,23,42,0.08);
+    }
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overscroll-behavior: none;
+  }
+  body {
+    min-height: 100vh;
+    min-height: 100dvh;
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  header.app {
+    position: sticky; top: 0; z-index: 10;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 10px var(--pad);
+    display: flex; align-items: center; gap: 10px;
+    padding-top: calc(env(safe-area-inset-top) + 10px);
+  }
+  header.app h1 {
+    margin: 0; font-size: 18px; font-weight: 600; flex: 1;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .iconbtn {
+    background: transparent; border: 0; color: var(--text);
+    width: var(--tap); height: var(--tap);
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 22px; cursor: pointer; border-radius: 12px;
+  }
+  .iconbtn:hover { background: var(--surface-2); }
+  main {
+    padding: var(--pad);
+    padding-bottom: calc(env(safe-area-inset-bottom) + 100px);
+    max-width: 720px; margin: 0 auto;
+  }
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  /* Subject grid */
+  .subject-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+  }
+  .subject-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 18px; min-height: 110px;
+    display: flex; flex-direction: column; justify-content: space-between;
+    cursor: pointer; transition: transform 0.05s ease;
+    box-shadow: var(--shadow);
+  }
+  .subject-card:active { transform: scale(0.98); }
+  .subject-card .emoji { font-size: 28px; }
+  .subject-card .name { font-weight: 600; font-size: 17px; }
+  .subject-card .meta { font-size: 13px; color: var(--muted); }
+
+  /* Lists */
+  .list { display: flex; flex-direction: column; gap: 10px; }
+  .row {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 14px;
+    display: flex; align-items: center; gap: 12px; cursor: pointer;
+  }
+  .row:active { background: var(--surface-2); }
+  .row .body { flex: 1; min-width: 0; }
+  .row .title { font-weight: 600; }
+  .row .sub { font-size: 13px; color: var(--muted); margin-top: 2px; }
+  .row .chev { color: var(--muted); font-size: 18px; }
+
+  /* Buttons */
+  .btn {
+    appearance: none; border: 0; cursor: pointer;
+    background: var(--accent); color: white;
+    padding: 14px 18px; border-radius: 12px;
+    font-size: 16px; font-weight: 600;
+    min-height: var(--tap); width: 100%;
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .btn.secondary { background: var(--surface-2); color: var(--text); border: 1px solid var(--border); }
+  .btn.success { background: var(--accent-2); }
+  .btn.danger { background: var(--danger); }
+  .btn.warn { background: var(--warn); color: #1a1300; }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-row { display: grid; gap: 10px; margin-top: 14px; }
+  .btn-row.two { grid-template-columns: 1fr 1fr; }
+
+  /* Forms */
+  textarea, input, select {
+    width: 100%; background: var(--surface); color: var(--text);
+    border: 1px solid var(--border); border-radius: 12px;
+    padding: 12px; font-size: 16px; font-family: inherit;
+    min-height: var(--tap);
+  }
+  textarea { min-height: 180px; resize: vertical; line-height: 1.45; }
+  label { display: block; font-size: 14px; color: var(--muted); margin: 12px 0 6px; }
+
+  .pill {
+    display: inline-block; padding: 4px 10px; border-radius: 999px;
+    font-size: 12px; background: var(--surface-2); color: var(--muted);
+    border: 1px solid var(--border);
+  }
+  .pill.good { background: rgba(56,211,159,0.15); color: var(--accent-2); border-color: rgba(56,211,159,0.4); }
+  .pill.bad  { background: rgba(255,107,107,0.15); color: var(--danger); border-color: rgba(255,107,107,0.4); }
+
+  /* Quiz card */
+  .quiz-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 20px;
+    min-height: 220px; display: flex; flex-direction: column; gap: 14px;
+    box-shadow: var(--shadow);
+  }
+  .quiz-q { font-size: 19px; line-height: 1.4; font-weight: 600; }
+  .quiz-a { font-size: 17px; line-height: 1.5; color: var(--text); background: var(--surface-2); padding: 12px; border-radius: 10px; border: 1px solid var(--border); }
+  .quiz-meta { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  /* Stats */
+  .stat-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 0; border-bottom: 1px solid var(--border);
+  }
+  .stat-row:last-child { border-bottom: 0; }
+  .bar { flex: 1; height: 8px; background: var(--surface-2); border-radius: 999px; overflow: hidden; }
+  .bar > span { display: block; height: 100%; background: var(--accent-2); }
+  .stat-label { flex: 1.4; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .stat-num { width: 70px; text-align: right; font-variant-numeric: tabular-nums; color: var(--muted); font-size: 13px; }
+
+  /* Modal/toast */
+  .toast {
+    position: fixed; bottom: calc(env(safe-area-inset-bottom) + 20px); left: 50%;
+    transform: translateX(-50%);
+    background: var(--surface); color: var(--text);
+    border: 1px solid var(--border); padding: 12px 16px;
+    border-radius: 12px; box-shadow: var(--shadow);
+    z-index: 100; max-width: 90%; text-align: center;
+    opacity: 0; pointer-events: none; transition: opacity 0.2s;
+  }
+  .toast.show { opacity: 1; }
+
+  .spinner {
+    display: inline-block; width: 16px; height: 16px;
+    border: 2px solid currentColor; border-right-color: transparent;
+    border-radius: 50%; animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .empty { text-align: center; color: var(--muted); padding: 40px 20px; }
+  .empty .big { font-size: 38px; margin-bottom: 10px; }
+
+  .notes-block {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 12px; font-size: 14px;
+    color: var(--muted); max-height: 200px; overflow: auto;
+    white-space: pre-wrap; line-height: 1.4;
+  }
+
+  .small { font-size: 13px; color: var(--muted); }
+  .center { text-align: center; }
+  .gap { height: 12px; }
+  .gap-l { height: 24px; }
+  hr { border: 0; border-top: 1px solid var(--border); margin: 18px 0; }
+
+  details.help {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 10px 12px; margin-top: 8px;
+  }
+  details.help summary { cursor: pointer; color: var(--muted); font-size: 14px; }
+  details.help pre {
+    background: var(--surface-2); padding: 10px; border-radius: 8px;
+    overflow: auto; font-size: 13px; line-height: 1.45;
+    border: 1px solid var(--border); margin-top: 8px;
+  }
+</style>
+</head>
+<body>
+<header class="app">
+  <button class="iconbtn" id="backBtn" aria-label="Back" style="display:none">‹</button>
+  <h1 id="title">Revision Coach</h1>
+  <button class="iconbtn" id="settingsBtn" aria-label="Settings">⚙︎</button>
+</header>
+
+<main>
+  <!-- HOME -->
+  <section class="screen active" id="screen-home">
+    <div class="subject-grid" id="subjectGrid"></div>
+    <div class="gap-l"></div>
+    <p class="small center">Tap a subject to add notes or start a quiz.</p>
+  </section>
+
+  <!-- SUBJECT -->
+  <section class="screen" id="screen-subject">
+    <div id="subjectTopics" class="list"></div>
+    <div class="btn-row">
+      <button class="btn" id="addNotesBtn">+ Add notes</button>
+      <div class="btn-row two">
+        <button class="btn success" id="quizSubjectBtn">Quiz me</button>
+        <button class="btn secondary" id="statsSubjectBtn">Stats</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ADD NOTES -->
+  <section class="screen" id="screen-add">
+    <label for="notesText">Paste notes or Q&amp;A</label>
+    <textarea id="notesText" placeholder="Paste here, or upload a file below..."></textarea>
+
+    <label for="fileInput">Or upload .txt, .md, or .docx</label>
+    <input type="file" id="fileInput" accept=".txt,.md,.markdown,.docx" />
+
+    <div class="gap"></div>
+    <label for="splitMode">Mode</label>
+    <select id="splitMode">
+      <option value="direct">Direct Q&amp;A import — free, no AI</option>
+      <option value="auto">Auto-split into topics + AI generate questions (uses API)</option>
+      <option value="single">Keep as one topic + AI generate questions (uses API)</option>
+    </select>
+
+    <details class="help" id="directHelp">
+      <summary>Direct import — expected format</summary>
+      <pre>TOPIC Family
+Q: How do you describe your family?
+A: My family is small but nice.
+
+Q: What does your dad look like?
+A: Medium height, grey hair, wears glasses.
+
+TOPIC School
+Q: What is your favourite subject?
+A: History, because it's interesting.</pre>
+      <p class="small">Accepted topic markers: <code>TOPIC name</code>, <code># name</code>, <code>## name</code>, <code>[name]</code>, <code>Thema: name</code>.<br>
+      Accepted prefixes: <code>Q:</code> / <code>A:</code>, <code>Q.</code> / <code>A.</code>, <code>Question:</code> / <code>Answer:</code>, <code>Frage:</code> / <code>Antwort:</code> (case-insensitive). Multi-line answers OK — they continue until the next <code>Q:</code> or topic marker.</p>
+    </details>
+
+    <div class="gap"></div>
+    <label for="singleTopicName">Topic name (used if no topic markers found, or for "single topic" mode):</label>
+    <input id="singleTopicName" placeholder="e.g. The Periodic Table" />
+
+    <div class="btn-row">
+      <button class="btn" id="processNotesBtn">Process notes</button>
+      <button class="btn secondary" id="cancelNotesBtn">Cancel</button>
+    </div>
+    <p class="small" id="modeNote"></p>
+  </section>
+
+  <!-- TOPIC -->
+  <section class="screen" id="screen-topic">
+    <div id="topicHeader"></div>
+    <div class="gap"></div>
+    <div class="btn-row two">
+      <button class="btn success" id="quizTopicBtn">Quiz this topic</button>
+      <button class="btn secondary" id="moreQuestionsBtn">+ More AI questions</button>
+    </div>
+    <div class="gap"></div>
+    <h3 style="margin:18px 0 8px">Questions</h3>
+    <div id="topicQuestions" class="list"></div>
+    <hr />
+    <h3 style="margin:18px 0 8px">Notes</h3>
+    <div class="notes-block" id="topicNotes"></div>
+    <div class="btn-row">
+      <button class="btn danger" id="deleteTopicBtn">Delete topic</button>
+    </div>
+  </section>
+
+  <!-- QUIZ -->
+  <section class="screen" id="screen-quiz">
+    <div class="quiz-card">
+      <div class="quiz-meta">
+        <span class="pill" id="quizScope"></span>
+        <span class="pill" id="quizProgress"></span>
+      </div>
+      <div class="quiz-q" id="quizQ"></div>
+      <div class="quiz-a" id="quizA" style="display:none"></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn" id="revealBtn">Reveal answer</button>
+      <div class="btn-row two" id="markRow" style="display:none">
+        <button class="btn danger" id="wrongBtn">Got it wrong</button>
+        <button class="btn success" id="rightBtn">Got it right</button>
+      </div>
+      <button class="btn secondary" id="speakBtn">🔊 Read question aloud</button>
+      <button class="btn secondary" id="endQuizBtn">End quiz</button>
+    </div>
+  </section>
+
+  <!-- STATS -->
+  <section class="screen" id="screen-stats">
+    <div id="statsBody"></div>
+    <div class="btn-row">
+      <button class="btn secondary" id="resetStatsBtn">Reset stats for this subject</button>
+    </div>
+  </section>
+
+  <!-- SETTINGS -->
+  <section class="screen" id="screen-settings">
+    <label for="apiKey">OpenAI API key (only needed for AI question generation)</label>
+    <input id="apiKey" type="password" placeholder="sk-..." autocomplete="off" />
+    <p class="small">Stored only on this device. Get one at platform.openai.com. Direct import mode does not use this.</p>
+    <label for="modelSel">Model (AI modes only)</label>
+    <select id="modelSel">
+      <option value="gpt-4o-mini">gpt-4o-mini (cheap, recommended)</option>
+      <option value="gpt-4o">gpt-4o (better, more expensive)</option>
+      <option value="gpt-4.1-mini">gpt-4.1-mini</option>
+    </select>
+    <label for="qPerTopic">Questions to generate per topic (AI modes only)</label>
+    <input id="qPerTopic" type="number" min="3" max="30" value="8" />
+    <div class="btn-row">
+      <button class="btn" id="saveSettingsBtn">Save</button>
+      <button class="btn secondary" id="exportBtn">Export all data (backup)</button>
+      <label for="importInput" class="btn secondary" style="cursor:pointer">Import backup</label>
+      <input id="importInput" type="file" accept=".json" style="display:none" />
+      <button class="btn danger" id="wipeBtn">Wipe all data</button>
+    </div>
+    <p class="small">Version 1.1 · Pete's Revision Coach</p>
+  </section>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<!-- Mammoth for .docx parsing -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<script>
+"use strict";
+
+/* =========================================================================
+   STATE & STORAGE
+   ========================================================================= */
+const SUBJECTS = [
+  { name: "German",            emoji: "🇩🇪" },
+  { name: "Physics",           emoji: "⚛️" },
+  { name: "Chemistry",         emoji: "🧪" },
+  { name: "Biology",           emoji: "🧬" },
+  { name: "Latin",             emoji: "📜" },
+  { name: "Business Studies",  emoji: "📈" }
+];
+
+const STORAGE_KEY = "revisionCoach_v1";
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch (e) { console.warn("loadState failed", e); }
+  return defaultState();
+}
+
+function defaultState() {
+  const subjects = {};
+  for (const s of SUBJECTS) {
+    subjects[s.name] = { emoji: s.emoji, topics: {} };
+  }
+  return {
+    apiKey: "",
+    model: "gpt-4o-mini",
+    qPerTopic: 8,
+    subjects,
+    ui: { currentSubject: null, currentTopic: null, quiz: null }
+  };
+}
+
+function saveState() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+let state = loadState();
+
+// Ensure all default subjects exist
+for (const s of SUBJECTS) {
+  if (!state.subjects[s.name]) state.subjects[s.name] = { emoji: s.emoji, topics: {} };
+  if (!state.subjects[s.name].emoji) state.subjects[s.name].emoji = s.emoji;
+}
+saveState();
+
+/* =========================================================================
+   ROUTING / SCREENS
+   ========================================================================= */
+const SCREENS = ["home", "subject", "add", "topic", "quiz", "stats", "settings"];
+const screenStack = ["home"];
+
+function showScreen(name, opts = {}) {
+  if (opts.push !== false) {
+    if (screenStack[screenStack.length - 1] !== name) screenStack.push(name);
+  }
+  for (const s of SCREENS) {
+    document.getElementById("screen-" + s).classList.toggle("active", s === name);
+  }
+  document.getElementById("backBtn").style.display = screenStack.length > 1 ? "" : "none";
+  setTitle(name);
+  renderScreen(name);
+  window.scrollTo(0, 0);
+}
+
+function goBack() {
+  if (screenStack.length <= 1) return;
+  screenStack.pop();
+  const prev = screenStack[screenStack.length - 1];
+  showScreen(prev, { push: false });
+}
+
+function setTitle(screen) {
+  const t = document.getElementById("title");
+  switch (screen) {
+    case "home":     t.textContent = "Revision Coach"; break;
+    case "subject":  t.textContent = state.ui.currentSubject || "Subject"; break;
+    case "add":      t.textContent = "Add notes"; break;
+    case "topic":    t.textContent = state.ui.currentTopic || "Topic"; break;
+    case "quiz":     t.textContent = "Quiz"; break;
+    case "stats":    t.textContent = "Stats — " + (state.ui.currentSubject || ""); break;
+    case "settings": t.textContent = "Settings"; break;
+  }
+}
+
+document.getElementById("backBtn").addEventListener("click", goBack);
+document.getElementById("settingsBtn").addEventListener("click", () => showScreen("settings"));
+
+/* =========================================================================
+   RENDERERS
+   ========================================================================= */
+function renderScreen(name) {
+  if (name === "home")     renderHome();
+  if (name === "subject")  renderSubject();
+  if (name === "add")      renderAdd();
+  if (name === "topic")    renderTopic();
+  if (name === "stats")    renderStats();
+  if (name === "settings") renderSettings();
+}
+
+function renderHome() {
+  const grid = document.getElementById("subjectGrid");
+  grid.innerHTML = "";
+  for (const s of SUBJECTS) {
+    const subj = state.subjects[s.name];
+    const topicCount = Object.keys(subj.topics).length;
+    const qCount = Object.values(subj.topics).reduce((n, t) => n + t.questions.length, 0);
+    const card = document.createElement("div");
+    card.className = "subject-card";
+    card.innerHTML = `
+      <div>
+        <div class="emoji">${s.emoji}</div>
+        <div class="name">${s.name}</div>
+      </div>
+      <div class="meta">${topicCount} topic${topicCount===1?"":"s"} · ${qCount} question${qCount===1?"":"s"}</div>
+    `;
+    card.addEventListener("click", () => {
+      state.ui.currentSubject = s.name;
+      saveState();
+      showScreen("subject");
+    });
+    grid.appendChild(card);
+  }
+}
+
+function renderSubject() {
+  const subjectName = state.ui.currentSubject;
+  if (!subjectName) { showScreen("home", { push: false }); return; }
+  const subj = state.subjects[subjectName];
+  const list = document.getElementById("subjectTopics");
+  list.innerHTML = "";
+  const topicNames = Object.keys(subj.topics);
+  if (topicNames.length === 0) {
+    list.innerHTML = `<div class="empty"><div class="big">📒</div><div>No topics yet.</div><div class="small">Tap "Add notes" below.</div></div>`;
+  } else {
+    for (const tname of topicNames) {
+      const t = subj.topics[tname];
+      const totals = topicTotals(t);
+      const pct = totals.total === 0 ? 0 : Math.round(100 * totals.correct / totals.total);
+      const row = document.createElement("div");
+      row.className = "row";
+      row.innerHTML = `
+        <div class="body">
+          <div class="title">${escapeHtml(tname)}</div>
+          <div class="sub">${t.questions.length} question${t.questions.length===1?"":"s"} · ${totals.total===0?"not attempted":pct + "% correct ("+totals.correct+"/"+totals.total+")"}</div>
+        </div>
+        <div class="chev">›</div>
+      `;
+      row.addEventListener("click", () => {
+        state.ui.currentTopic = tname;
+        saveState();
+        showScreen("topic");
+      });
+      list.appendChild(row);
+    }
+  }
+}
+
+function renderAdd() {
+  updateModeNote();
+}
+
+function updateModeNote() {
+  const mode = document.getElementById("splitMode").value;
+  const note = document.getElementById("modeNote");
+  const help = document.getElementById("directHelp");
+  if (mode === "direct") {
+    note.textContent = "Direct import: free, runs on-device. No API key needed.";
+    help.open = true;
+  } else if (mode === "auto") {
+    note.textContent = "Auto-split: uses OpenAI to split into topics, then generate questions for each. API key required.";
+    help.open = false;
+  } else {
+    note.textContent = "Single topic: uses OpenAI to generate questions. API key required.";
+    help.open = false;
+  }
+}
+
+function renderTopic() {
+  const subj = state.subjects[state.ui.currentSubject];
+  const topic = subj.topics[state.ui.currentTopic];
+  if (!topic) { goBack(); return; }
+  document.getElementById("topicHeader").innerHTML = `
+    <div class="small">${escapeHtml(state.ui.currentSubject)} / topic</div>
+    <h2 style="margin:6px 0 0">${escapeHtml(state.ui.currentTopic)}</h2>
+  `;
+  document.getElementById("topicNotes").textContent = topic.notes || "(no notes stored)";
+  const qList = document.getElementById("topicQuestions");
+  qList.innerHTML = "";
+  if (topic.questions.length === 0) {
+    qList.innerHTML = `<div class="empty"><div>No questions yet.</div><div class="small">Tap "+ More AI questions" to generate some.</div></div>`;
+  } else {
+    topic.questions.forEach((q, idx) => {
+      const row = document.createElement("div");
+      row.className = "row";
+      row.innerHTML = `
+        <div class="body">
+          <div class="title">${escapeHtml(q.q)}</div>
+          <div class="sub">${escapeHtml(q.a.slice(0, 120))}${q.a.length>120?"…":""}</div>
+          <div style="margin-top:6px"><span class="pill good">✓ ${q.correct||0}</span> <span class="pill bad">✗ ${q.incorrect||0}</span></div>
+        </div>
+        <button class="iconbtn" data-del="${idx}" aria-label="Delete">🗑</button>
+      `;
+      qList.appendChild(row);
+    });
+    qList.querySelectorAll("[data-del]").forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const i = parseInt(btn.getAttribute("data-del"), 10);
+        if (confirm("Delete this question?")) {
+          topic.questions.splice(i, 1);
+          saveState(); renderTopic();
+        }
+      });
+    });
+  }
+}
+
+function renderStats() {
+  const subj = state.subjects[state.ui.currentSubject];
+  const body = document.getElementById("statsBody");
+  body.innerHTML = "";
+  const topics = Object.entries(subj.topics);
+  if (topics.length === 0) {
+    body.innerHTML = `<div class="empty"><div>No data yet.</div></div>`;
+    return;
+  }
+  let totalC = 0, totalT = 0;
+  for (const [, t] of topics) { const tt = topicTotals(t); totalC += tt.correct; totalT += tt.total; }
+  const subjPct = totalT === 0 ? 0 : Math.round(100 * totalC / totalT);
+  body.innerHTML = `
+    <div class="quiz-card">
+      <div class="small">Overall — ${state.ui.currentSubject}</div>
+      <div style="font-size:34px;font-weight:700">${subjPct}%</div>
+      <div class="bar"><span style="width:${subjPct}%"></span></div>
+      <div class="small">${totalC} correct of ${totalT} attempts across ${topics.length} topic${topics.length===1?"":"s"}.</div>
+    </div>
+    <div class="gap"></div>
+    <h3 style="margin:18px 0 8px">By topic</h3>
+  `;
+  for (const [name, t] of topics) {
+    const tt = topicTotals(t);
+    const pct = tt.total === 0 ? 0 : Math.round(100 * tt.correct / tt.total);
+    const row = document.createElement("div");
+    row.className = "stat-row";
+    row.innerHTML = `
+      <div class="stat-label">${escapeHtml(name)}</div>
+      <div class="bar"><span style="width:${pct}%"></span></div>
+      <div class="stat-num">${pct}% (${tt.correct}/${tt.total})</div>
+    `;
+    body.appendChild(row);
+  }
+}
+
+function renderSettings() {
+  document.getElementById("apiKey").value = state.apiKey || "";
+  document.getElementById("modelSel").value = state.model || "gpt-4o-mini";
+  document.getElementById("qPerTopic").value = state.qPerTopic || 8;
+}
+
+function topicTotals(t) {
+  let correct = 0, total = 0;
+  for (const q of t.questions) {
+    correct += (q.correct || 0);
+    total += (q.correct || 0) + (q.incorrect || 0);
+  }
+  return { correct, total };
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+
+/* =========================================================================
+   ADD NOTES — UI WIRING
+   ========================================================================= */
+document.getElementById("addNotesBtn").addEventListener("click", () => showScreen("add"));
+document.getElementById("cancelNotesBtn").addEventListener("click", goBack);
+document.getElementById("splitMode").addEventListener("change", updateModeNote);
+
+document.getElementById("fileInput").addEventListener("change", async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  try {
+    let text = "";
+    if (file.name.toLowerCase().endsWith(".docx")) {
+      const buf = await file.arrayBuffer();
+      const result = await window.mammoth.extractRawText({ arrayBuffer: buf });
+      text = result.value || "";
+    } else {
+      text = await file.text();
+    }
+    document.getElementById("notesText").value = text;
+    if (!document.getElementById("singleTopicName").value.trim()) {
+      document.getElementById("singleTopicName").value = file.name.replace(/\.[^.]+$/, "");
+    }
+    toast("File loaded.");
+  } catch (err) {
+    toast("Could not read file: " + err.message);
+  }
+});
+
+/* =========================================================================
+   DIRECT Q&A PARSER (on-device, no API)
+   =========================================================================
+   Accepts:
+     Topic markers (any of):
+       TOPIC <name>           // also "TOPIC 1" - the rest of the line is the name
+       Thema: <name>
+       # <name>     (markdown H1)
+       ## <name>    (markdown H2)
+       [<name>]
+     Q&A prefixes (case-insensitive):
+       Q: ... / A: ...
+       Q. ... / A. ...
+       Question: / Answer:
+       Frage: / Antwort:
+     Multi-line answers continue until the next Q: or topic marker.
+*/
+const TOPIC_RE  = /^\s*(?:TOPIC\s+(.+)|Thema\s*[:\-]\s*(.+)|#{1,2}\s+(.+)|\[(.+)\])\s*$/i;
+const Q_RE      = /^\s*(?:Q|Question|Frage)\s*[:.\-]\s*(.*)$/i;
+const A_RE      = /^\s*(?:A|Answer|Antwort)\s*[:.\-]\s*(.*)$/i;
+
+function parseDirectQA(text, fallbackTopicName) {
+  const lines = text.split(/\r?\n/);
+  const topics = [];
+  let currentTopic = null;
+  let pendingQ = null;
+  let answerBuf = null; // null = not collecting; array = collecting
+
+  function ensureTopic() {
+    if (!currentTopic) {
+      currentTopic = { name: (fallbackTopicName && fallbackTopicName.trim()) || "Imported", pairs: [] };
+      topics.push(currentTopic);
+    }
+  }
+  function flushPair() {
+    if (pendingQ != null) {
+      ensureTopic();
+      const a = answerBuf ? answerBuf.join("\n").replace(/\n{3,}/g, "\n\n").trim() : "";
+      currentTopic.pairs.push({ q: pendingQ.trim(), a });
+    }
+    pendingQ = null;
+    answerBuf = null;
+  }
+
+  for (const raw of lines) {
+    const mTopic = raw.match(TOPIC_RE);
+    if (mTopic) {
+      flushPair();
+      let name = (mTopic[1] || mTopic[2] || mTopic[3] || mTopic[4] || "").trim();
+      // If the topic name is just digits (e.g. "TOPIC 1"), prefix with "Topic "
+      if (/^\d+$/.test(name)) name = "Topic " + name;
+      currentTopic = { name: name || "Untitled topic", pairs: [] };
+      topics.push(currentTopic);
+      continue;
+    }
+    const mQ = raw.match(Q_RE);
+    if (mQ) {
+      flushPair();
+      pendingQ = mQ[1] || "";
+      answerBuf = [];
+      continue;
+    }
+    const mA = raw.match(A_RE);
+    if (mA) {
+      if (pendingQ != null) {
+        answerBuf = [mA[1] || ""];
+      }
+      continue;
+    }
+    // continuation line for current answer
+    if (pendingQ != null && answerBuf !== null) {
+      answerBuf.push(raw);
+    }
+  }
+  flushPair();
+
+  // Remove empty topics and pairs missing either side
+  for (const t of topics) {
+    t.pairs = t.pairs.filter(p => p.q && p.a);
+  }
+  return topics.filter(t => t.pairs.length > 0);
+}
+
+function pairsToNotesText(pairs) {
+  return pairs.map(p => `Q: ${p.q}\nA: ${p.a}`).join("\n\n");
+}
+
+/* =========================================================================
+   PROCESS NOTES (handles all 3 modes)
+   ========================================================================= */
+document.getElementById("processNotesBtn").addEventListener("click", async () => {
+  const text = document.getElementById("notesText").value.trim();
+  if (!text) { toast("Paste or upload notes first."); return; }
+  const mode = document.getElementById("splitMode").value;
+  const subject = state.ui.currentSubject;
+  if (!subject) { toast("No subject selected."); return; }
+
+  const btn = document.getElementById("processNotesBtn");
+  const origLabel = btn.textContent;
+  btn.disabled = true;
+
+  try {
+    if (mode === "direct") {
+      btn.innerHTML = '<span class="spinner"></span> Parsing...';
+      const fallbackName = document.getElementById("singleTopicName").value.trim();
+      const parsedTopics = parseDirectQA(text, fallbackName);
+      if (parsedTopics.length === 0) {
+        throw new Error("No Q:/A: pairs found. Check the format example above.");
+      }
+      let totalPairs = 0;
+      for (const t of parsedTopics) {
+        const topicKey = uniqueTopicName(subject, t.name);
+        state.subjects[subject].topics[topicKey] = {
+          notes: pairsToNotesText(t.pairs),
+          questions: t.pairs.map(p => ({ q: p.q, a: p.a, correct: 0, incorrect: 0 }))
+        };
+        totalPairs += t.pairs.length;
+      }
+      saveState();
+      toast(`Imported ${parsedTopics.length} topic${parsedTopics.length===1?"":"s"}, ${totalPairs} question${totalPairs===1?"":"s"}.`);
+    } else {
+      // AI modes — require API key
+      if (!state.apiKey) {
+        if (!confirm("No OpenAI API key set. Open Settings to add one?")) {
+          btn.disabled = false; btn.textContent = origLabel; return;
+        }
+        showScreen("settings");
+        btn.disabled = false; btn.textContent = origLabel;
+        return;
+      }
+      let aiTopics = [];
+      if (mode === "auto") {
+        btn.innerHTML = '<span class="spinner"></span> Splitting into topics...';
+        aiTopics = await aiSplitTopics(subject, text);
+        if (!aiTopics || aiTopics.length === 0) throw new Error("No topics returned.");
+      } else {
+        const name = document.getElementById("singleTopicName").value.trim() || "Untitled topic";
+        aiTopics = [{ name, content: text }];
+      }
+      for (let i = 0; i < aiTopics.length; i++) {
+        const t = aiTopics[i];
+        btn.innerHTML = `<span class="spinner"></span> (${i+1}/${aiTopics.length}) Questions: ${t.name.slice(0,30)}...`;
+        const questions = await aiGenerateQuestions(subject, t.name, t.content, state.qPerTopic || 8);
+        const topicKey = uniqueTopicName(subject, t.name);
+        state.subjects[subject].topics[topicKey] = {
+          notes: t.content,
+          questions: questions.map(q => ({ q: q.q, a: q.a, correct: 0, incorrect: 0 }))
+        };
+        saveState();
+      }
+      toast(`Created ${aiTopics.length} topic${aiTopics.length===1?"":"s"}.`);
+    }
+
+    // Reset form
+    document.getElementById("notesText").value = "";
+    document.getElementById("singleTopicName").value = "";
+    document.getElementById("fileInput").value = "";
+    goBack();
+  } catch (err) {
+    console.error(err);
+    alert("Error: " + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = origLabel;
+  }
+});
+
+function uniqueTopicName(subject, name) {
+  const topics = state.subjects[subject].topics;
+  if (!topics[name]) return name;
+  let i = 2;
+  while (topics[name + " (" + i + ")"]) i++;
+  return name + " (" + i + ")";
+}
+
+/* =========================================================================
+   AI CALLS (used by auto/single modes only)
+   ========================================================================= */
+async function openaiChat(messages, { temperature = 0.3, json = true } = {}) {
+  if (!state.apiKey) throw new Error("No API key. Open Settings.");
+  const body = {
+    model: state.model || "gpt-4o-mini",
+    messages,
+    temperature
+  };
+  if (json) body.response_format = { type: "json_object" };
+
+  const resp = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Authorization": "Bearer " + state.apiKey,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(body)
+  });
+  if (!resp.ok) {
+    const errText = await resp.text();
+    throw new Error("OpenAI error " + resp.status + ": " + errText.slice(0, 200));
+  }
+  const data = await resp.json();
+  const content = data.choices?.[0]?.message?.content || "";
+  if (!json) return content;
+  try {
+    return JSON.parse(content);
+  } catch (e) {
+    throw new Error("Could not parse JSON from model: " + content.slice(0, 200));
+  }
+}
+
+async function aiSplitTopics(subject, notesText) {
+  const sys = `You are a GCSE ${subject} study assistant. Split the user's notes into 2-8 coherent revision topics. Each topic should have a clear, concise name (3-7 words) and the full content of the notes that belong to that topic, kept verbatim from the source. Do not summarise. Return strict JSON of the form: {"topics":[{"name":"...","content":"..."}]}`;
+  const user = `Subject: ${subject}\n\nNotes:\n\n${notesText}`;
+  const result = await openaiChat([
+    { role: "system", content: sys },
+    { role: "user", content: user }
+  ], { temperature: 0.2 });
+  return Array.isArray(result.topics) ? result.topics : [];
+}
+
+async function aiGenerateQuestions(subject, topicName, topicContent, n) {
+  const sys = `You are a GCSE ${subject} examiner writing revision questions for a UK GCSE student aiming for grade 7-9. Generate ${n} clear revision questions and concise model answers based ONLY on the notes provided. Mix recall, understanding, and short application questions. Keep answers to 1-3 sentences. Return strict JSON of the form: {"questions":[{"q":"...","a":"..."}]}`;
+  const user = `Subject: ${subject}\nTopic: ${topicName}\n\nNotes:\n\n${topicContent}`;
+  const result = await openaiChat([
+    { role: "system", content: sys },
+    { role: "user", content: user }
+  ], { temperature: 0.4 });
+  return Array.isArray(result.questions) ? result.questions : [];
+}
+
+document.getElementById("moreQuestionsBtn").addEventListener("click", async () => {
+  const subj = state.ui.currentSubject;
+  const tname = state.ui.currentTopic;
+  const topic = state.subjects[subj].topics[tname];
+  if (!topic) return;
+  if (!state.apiKey) { toast("Set an API key in Settings first."); return; }
+  const btn = document.getElementById("moreQuestionsBtn");
+  btn.disabled = true;
+  const orig = btn.textContent;
+  btn.innerHTML = '<span class="spinner"></span> Generating...';
+  try {
+    const more = await aiGenerateQuestions(subj, tname, topic.notes, state.qPerTopic || 8);
+    topic.questions.push(...more.map(q => ({ q: q.q, a: q.a, correct: 0, incorrect: 0 })));
+    saveState(); renderTopic();
+    toast(`Added ${more.length} questions.`);
+  } catch (err) {
+    alert("Error: " + err.message);
+  } finally {
+    btn.disabled = false; btn.textContent = orig;
+  }
+});
+
+document.getElementById("deleteTopicBtn").addEventListener("click", () => {
+  if (!confirm("Delete this topic and all its questions?")) return;
+  delete state.subjects[state.ui.currentSubject].topics[state.ui.currentTopic];
+  state.ui.currentTopic = null;
+  saveState(); goBack();
+});
+
+/* =========================================================================
+   QUIZ
+   ========================================================================= */
+document.getElementById("quizSubjectBtn").addEventListener("click", () => startQuiz("subject"));
+document.getElementById("quizTopicBtn").addEventListener("click", () => startQuiz("topic"));
+document.getElementById("statsSubjectBtn").addEventListener("click", () => showScreen("stats"));
+
+function startQuiz(scope) {
+  const subj = state.subjects[state.ui.currentSubject];
+  if (!subj) return;
+  let pool = [];
+  if (scope === "subject") {
+    for (const [tname, t] of Object.entries(subj.topics)) {
+      for (const q of t.questions) pool.push({ subject: state.ui.currentSubject, topic: tname, q });
+    }
+  } else {
+    const tname = state.ui.currentTopic;
+    const t = subj.topics[tname];
+    if (!t) return;
+    for (const q of t.questions) pool.push({ subject: state.ui.currentSubject, topic: tname, q });
+  }
+  if (pool.length === 0) { toast("No questions yet."); return; }
+  shuffle(pool);
+  state.ui.quiz = {
+    scope,
+    queue: pool,
+    index: 0,
+    revealed: false,
+    asked: 0,
+    correct: 0,
+    incorrect: 0
+  };
+  showScreen("quiz");
+  renderQuiz();
+}
+
+function renderQuiz() {
+  const q = state.ui.quiz;
+  if (!q) { goBack(); return; }
+  const item = q.queue[q.index];
+  if (!item) { endQuiz(); return; }
+  document.getElementById("quizScope").textContent = (q.scope === "topic" ? state.ui.currentTopic : state.ui.currentSubject);
+  document.getElementById("quizProgress").textContent = `Q ${q.asked + 1} · ✓ ${q.correct} · ✗ ${q.incorrect}`;
+  document.getElementById("quizQ").textContent = item.q.q;
+  const aEl = document.getElementById("quizA");
+  aEl.textContent = item.q.a;
+  aEl.style.display = q.revealed ? "" : "none";
+  document.getElementById("revealBtn").style.display = q.revealed ? "none" : "";
+  document.getElementById("markRow").style.display = q.revealed ? "" : "none";
+}
+
+document.getElementById("revealBtn").addEventListener("click", () => {
+  state.ui.quiz.revealed = true;
+  renderQuiz();
+});
+
+document.getElementById("rightBtn").addEventListener("click", () => markQuiz(true));
+document.getElementById("wrongBtn").addEventListener("click", () => markQuiz(false));
+
+function markQuiz(correct) {
+  const q = state.ui.quiz;
+  const item = q.queue[q.index];
+  if (!item) return;
+  const topic = state.subjects[item.subject].topics[item.topic];
+  const target = topic.questions.find(x => x.q === item.q.q && x.a === item.q.a);
+  if (target) {
+    if (correct) target.correct = (target.correct || 0) + 1;
+    else target.incorrect = (target.incorrect || 0) + 1;
+  }
+  if (correct) q.correct++; else q.incorrect++;
+  q.asked++;
+  q.index++;
+  q.revealed = false;
+  saveState();
+  if (q.index >= q.queue.length) endQuiz();
+  else renderQuiz();
+}
+
+function endQuiz() {
+  const q = state.ui.quiz;
+  if (q) {
+    const pct = q.asked === 0 ? 0 : Math.round(100 * q.correct / q.asked);
+    alert(`Quiz finished.\n\n${q.correct} correct of ${q.asked} (${pct}%).`);
+  }
+  state.ui.quiz = null;
+  saveState();
+  goBack();
+}
+
+document.getElementById("endQuizBtn").addEventListener("click", endQuiz);
+
+document.getElementById("speakBtn").addEventListener("click", () => {
+  const q = state.ui.quiz;
+  if (!q) return;
+  const item = q.queue[q.index];
+  if (!item) return;
+  speak(item.q.q);
+});
+
+function speak(text) {
+  if (!("speechSynthesis" in window)) { toast("Speech not supported."); return; }
+  window.speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  // Try to pick a voice that matches the subject's likely language
+  const subj = state.ui.currentSubject;
+  const lang = subjectToLang(subj);
+  if (lang) u.lang = lang;
+  u.rate = 0.95; u.pitch = 1.0;
+  window.speechSynthesis.speak(u);
+}
+
+function subjectToLang(subj) {
+  switch (subj) {
+    case "German": return "de-DE";
+    case "Latin":  return "la"; // most browsers will fall back to default voice
+    default:       return "en-GB";
+  }
+}
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+}
+
+/* =========================================================================
+   STATS
+   ========================================================================= */
+document.getElementById("resetStatsBtn").addEventListener("click", () => {
+  if (!confirm("Reset all correct/incorrect counts for this subject?")) return;
+  const subj = state.subjects[state.ui.currentSubject];
+  for (const t of Object.values(subj.topics)) {
+    for (const q of t.questions) { q.correct = 0; q.incorrect = 0; }
+  }
+  saveState(); renderStats();
+});
+
+/* =========================================================================
+   SETTINGS
+   ========================================================================= */
+document.getElementById("saveSettingsBtn").addEventListener("click", () => {
+  state.apiKey = document.getElementById("apiKey").value.trim();
+  state.model = document.getElementById("modelSel").value;
+  state.qPerTopic = Math.max(3, Math.min(30, parseInt(document.getElementById("qPerTopic").value, 10) || 8));
+  saveState();
+  toast("Saved.");
+});
+
+document.getElementById("exportBtn").addEventListener("click", () => {
+  const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  const stamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+  a.href = url;
+  a.download = `revision-coach-backup-${stamp}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+});
+
+document.getElementById("importInput").addEventListener("change", async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  if (!confirm("Importing will REPLACE all current data. Continue?")) { e.target.value = ""; return; }
+  try {
+    const text = await file.text();
+    const incoming = JSON.parse(text);
+    if (!incoming || !incoming.subjects) throw new Error("Invalid backup file.");
+    state = incoming;
+    saveState();
+    toast("Imported.");
+    showScreen("home", { push: false });
+  } catch (err) {
+    alert("Could not import: " + err.message);
+  }
+  e.target.value = "";
+});
+
+document.getElementById("wipeBtn").addEventListener("click", () => {
+  if (!confirm("Wipe ALL data on this device? This cannot be undone.")) return;
+  if (!confirm("Are you absolutely sure?")) return;
+  localStorage.removeItem(STORAGE_KEY);
+  state = defaultState();
+  saveState();
+  toast("Wiped.");
+  showScreen("home", { push: false });
+});
+
+/* =========================================================================
+   TOAST
+   ========================================================================= */
+let toastTimer = null;
+function toast(msg) {
+  const el = document.getElementById("toast");
+  el.textContent = msg;
+  el.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove("show"), 2200);
+}
+
+/* =========================================================================
+   SERVICE WORKER
+   ========================================================================= */
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("service-worker.js").catch(err => {
+      console.warn("SW register failed:", err);
+    });
+  });
+}
+
+/* =========================================================================
+   INITIAL RENDER
+   ========================================================================= */
+renderHome();
+updateModeNote();
+
+/* =========================================================================
+   EXPORT FOR TESTING (no-op in browser)
+   ========================================================================= */
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = { parseDirectQA, pairsToNotesText };
+}
+</script>
+</body>
+</html>
